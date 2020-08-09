@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import TOC from "./components/TOC";
-import Content from "./components/Content"
+import ReadContent from "./components/ReadContent"
+import CreateContent from "./components/CreateContent"
+import UpdateContent from "./components/UpdateContent"
 import Subject from "./components/Subject"
 import Control from "./components/Control"
 import './App.css';
@@ -9,8 +11,9 @@ import './App.css';
 class App extends Component {
   constructor(props){
     super(props);
+    this.max_content_id = 3;
     this.state = {
-      mode:'read',
+      mode:'welcome',
       selected_content_id:2,
       subject:{title:'WEB', sub:'World Wide Web!'},
       welcome:{title:'Welcome', desc:'Hello, React!!'},
@@ -21,24 +24,58 @@ class App extends Component {
       ]
     }
   }
-  render() {
-    console.log('App render');
-    var _title, _desc = null;
+  getReadContent(){
+    var i = 0;
+    while(i < this.state.contents.length){
+      var data = this.state.contents[i];
+      if(data.id === this.state.selected_content_id) {
+        
+        return data;
+      }
+      i = i + 1;
+    }
+  }
+  getContent(){
+    var _title, _desc, _article = null;
     if(this.state.mode ===  'welcome'){
       _title = this.state.welcome.title;
       _desc = this.state.welcome.desc;
+      _article = <ReadContent title={_title} desc={_desc}></ReadContent>;
     } else if(this.state.mode === 'read'){
-      var i = 0;
-      while(i < this.state.contents.length){
-        var data = this.state.contents[i];
-        if(data.id === this.state.selected_content_id) {
-          _title = data.title;
-          _desc = data.desc;
-          break;
+      var _contents = this.getReadContent();
+      _article = <ReadContent title={_contents.title} desc={_contents.desc}></ReadContent>;
+    }else if(this.state.mode === 'create'){
+      _article = <CreateContent onSubmit={function(_title,_desc){
+        // this.state.contents 에 데이터 추가
+        var _contents = this.state.contents.concat(
+          {id:++this.max_content_id,title:_title,desc:_desc}
+        );
+        this.setState({ contents:_contents,
+                        mode:"read",
+                        selected_content_id:this.max_content_id});
+      }.bind(this)}></CreateContent>;
+    }else if(this.state.mode === 'update'){
+      var _contents = this.getReadContent();
+      _article = <UpdateContent data={_contents} onSubmit={function(_id, _title,_desc){
+        // this.state.contents 에 데이터 추가
+        var _content = Array.from(this.state.contents);
+        var i = 0;
+        while(i<_content.length){
+          if(_content[i].id === _id){
+            _content[i] = {id:_id, title:_title, desc:_desc};
+            break;
+          }
+          i++;
         }
-        i = i + 1;
-      }
+        this.setState({contents:_content,mode:"read"});
+      }.bind(this)}></UpdateContent>;
     }
+    return _article;
+  }
+  render() {
+    console.log('App render');
+    
+    
     return (
       <div className="App">
         <Subject 
@@ -58,10 +95,24 @@ class App extends Component {
           }.bind(this)} 
           data={this.state.contents}
         ></TOC>
-        <Control onChangeMode={function(mode){
-          this.setState({mode:mode});
+        <Control onChangeMode={function(_mode){
+          if(_mode==="delete"){
+            if(window.confirm("Really?")){
+              var i = 0;
+              var _contents = Array.from(this.state.contents);
+              while(i++< _contents.length){
+                if(_contents[i].id === this.state.selected_content_id){
+                  _contents.splice(i,1); 
+                  break;
+                }
+              }
+              this.setState({contents:_contents,mode:"welcome"});
+            }
+          }else{
+            this.setState({mode:_mode});
+          };
         }.bind(this)}></Control>
-        <Content title={_title} desc={_desc}></Content>
+        {this.getContent()};
       </div>
     );
   }

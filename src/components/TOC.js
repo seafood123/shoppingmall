@@ -1,6 +1,13 @@
 import React, {Component} from "react";
 
 class TOC extends Component{
+  shouldComponentUpdate(newProps, newStates){
+    if(this.props.data === newProps.data){
+      return false;
+    }else{
+      return true;
+    }
+  }
     render(){
         var data = this.props.data;
         var i = 0;
